@@ -1,9 +1,7 @@
 package main
 
-import (
-	"AniComix/mpeg"
-)
+import "AniComix/mpeg"
 
 func main() {
-	mpeg.Hello()
+	mpeg.TransformMpeg4IntoDash("path/to/file")
 }
