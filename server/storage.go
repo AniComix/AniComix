@@ -11,6 +11,7 @@ import (
 
 var (
 	dataDir = "/"
+	db      *gorm.DB
 )
 
 func initStorage() {
@@ -28,4 +29,8 @@ func initDb() {
 		log.Fatal(err)
 	}
 	_ = db.AutoMigrate(&models.User{})
+}
+
+func DB() *gorm.DB {
+	return db
 }

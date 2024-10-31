@@ -51,8 +51,8 @@ func generateSecret() {
 	}
 }
 
-// / generateToken generates a JWT token with the given id
-func generateToken(id int) (string, error) {
+// GenerateToken generates a JWT token with the given id
+func GenerateToken(id uint) (string, error) {
 	generateSecret()
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":   id,
