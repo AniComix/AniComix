@@ -16,8 +16,12 @@ func Run() {
 				"message": "hello world",
 			})
 		})
-		apiGroup.POST("/register", api.Register)
-		apiGroup.POST("/login", api.Login)
-		apiGroup.POST("/user/update", api.UpdateUserInfo)
+		user := apiGroup.Group("/user")
+		{
+			user.POST("/register", api.Register)
+			user.POST("/login", api.Login)
+			user.POST("/update", api.UpdateUserInfo)
+			user.POST("/changePassword", api.ChangePassword)
+		}
 	}
 }

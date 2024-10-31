@@ -73,7 +73,16 @@ func hashPassword(password string) []byte {
 }
 
 func checkPassword(password string, hash []byte) bool {
-	return string(hash) == string(hashPassword(password))
+	hash1 := hashPassword(password)
+	if len(hash1) != len(hash) {
+		return false
+	}
+	for i := 0; i < len(hash); i++ {
+		if hash1[i] != hash[i] {
+			return false
+		}
+	}
+	return true
 }
 
 type updateUserInfoJson struct {
@@ -144,6 +153,36 @@ func UpdateUserInfo(c *gin.Context) {
 		user.Bio = json.Bio
 	}
 
+	if err := storage.DB().Save(&user).Error; err != nil {
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+func ChangePassword(c *gin.Context) {
+	oldPassword := c.PostForm("old_password")
+	newPassword := c.PostForm("new_password")
+	if oldPassword == "" || newPassword == "" {
+		badRequest(c, "old_password and new_password are required")
+		return
+	}
+
+	uid, exists := c.Get("uid")
+	if !exists {
+		unauthorized(c)
+		return
+	}
+	var user models.User
+	if err := storage.DB().Where("id = ?", uid).First(&user).Error; err != nil {
+		badRequest(c, "user not found")
+		return
+	}
+	if !checkPassword(oldPassword, user.PasswordHash) {
+		unauthorized(c)
+		return
+	}
+	user.PasswordHash = hashPassword(newPassword)
 	if err := storage.DB().Save(&user).Error; err != nil {
 		c.JSON(500, gin.H{"error": "internal server error"})
 		return
