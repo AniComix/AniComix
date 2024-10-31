@@ -7,8 +7,9 @@ package mpeg
 */
 import "C"
 
-func Transform_MP4_to_DASH(name *C.char) {
-	C.transform_MP4_to_DASH(name)
+func Transform_MP4_to_DASH(name string) {
+	cstr := C.CString(name)
+	C.transform_MP4_to_DASH(cstr)
 }
 
 func Hello() {

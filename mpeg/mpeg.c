@@ -4,7 +4,7 @@
 
 #include "mpeg.h"
 
-int transform_MP4_to_DASH(const char *input_path) {
+int transform_MP4_to_DASH(char *input_path) {
   AVFormatContext *input_context = NULL;
   if (avformat_open_input(&input_context, input_path, NULL, NULL) < 0) {
     fprintf(stderr, "Could not open input file: %s\n", input_path);
@@ -49,7 +49,7 @@ int transform_MP4_to_DASH(const char *input_path) {
 
   // Create the output DASH directory
   char dash_output[512];
-  snprintf(dash_output, sizeof(dash_output), "%s/manifest.mpd", "output");
+  snprintf(dash_output, sizeof(dash_output), "%s/manifest.mpd", "../output");
 
   if (!(output_context->oformat->flags & AVFMT_NOFILE)) {
     if (avio_open(&output_context->pb, dash_output, AVIO_FLAG_WRITE) < 0) {

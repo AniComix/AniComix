@@ -6,6 +6,6 @@
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 #include <stdio.h>
-int transform_MP4_to_DASH(const char *);
+int transform_MP4_to_DASH( char *);
 void hello();
 #endif
