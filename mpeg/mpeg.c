@@ -49,8 +49,7 @@ int transform_MP4_to_DASH(const char *input_path) {
 
   // Create the output DASH directory
   char dash_output[512];
-  snprintf(dash_output, sizeof(dash_output), "%s/manifest.mpd",
-           "output");
+  snprintf(dash_output, sizeof(dash_output), "%s/manifest.mpd", "output");
 
   if (!(output_context->oformat->flags & AVFMT_NOFILE)) {
     if (avio_open(&output_context->pb, dash_output, AVIO_FLAG_WRITE) < 0) {
@@ -106,4 +105,8 @@ int transform_MP4_to_DASH(const char *input_path) {
 
   printf("DASH file successfully created at %s\n", dash_output);
   return 0;
+}
+
+void hello(){
+  printf("hello from c\n");
 }

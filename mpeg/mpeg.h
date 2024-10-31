@@ -1,15 +1,11 @@
-//
-// Created by delta on 30 Oct 2024.
-//
 
-#ifndef MPEG__MPEG_H_
-#define MPEG__MPEG_H_
-
-#include "FFmpeg/libavcodec/avcodec.h"
-#include "FFmpeg/libavformat/avformat.h"
-#include "FFmpeg/libavutil/avutil.h"
-#include "FFmpeg/libavutil/dict.h"
-
+#ifndef _ANICOMIX_MPEG_H
+#define _ANICOMIX_MPEG_H
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+#include <libavutil/dict.h>
+#include <stdio.h>
 int transform_MP4_to_DASH(const char *);
-
-#endif // MPEG__MPEG_H_
+void hello();
+#endif

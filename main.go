@@ -1,12 +1,11 @@
 package main
 
 import (
+	"AniComix/mpeg"
 	"fmt"
-	"github.com/AniComix/server"
 )
 
 func main() {
-	fmt.Println("hello")
-	mpeg.Transform_MP4_to_DASH("a.mp4")
-	server.Run()
+	fmt.Println("hello go")
+	mpeg.Hello()
 }
