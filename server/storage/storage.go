@@ -1,4 +1,4 @@
-package server
+package storage
 
 import (
 	"github.com/AniComix/server/models"
@@ -14,7 +14,7 @@ var (
 	db      *gorm.DB
 )
 
-func initStorage() {
+func InitStorage() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)

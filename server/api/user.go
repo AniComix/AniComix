@@ -3,8 +3,8 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/AniComix/server"
 	"github.com/AniComix/server/models"
+	"github.com/AniComix/server/storage"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -28,11 +28,11 @@ func Register(c *gin.Context) {
 		Username:     username,
 		PasswordHash: hashPassword(password),
 	}
-	if err := server.DB().Create(&user).Error; err == nil {
+	if err := storage.DB().Create(&user).Error; err == nil {
 		badRequest(c, "username already exists")
 		return
 	}
-	token, err := server.GenerateToken(user.ID)
+	token, err := GenerateToken(user.ID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "internal server error"})
 		return
@@ -49,7 +49,7 @@ func Login(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := server.DB().Where("username = ?", username).First(&user).Error; err != nil {
+	if err := storage.DB().Where("username = ?", username).First(&user).Error; err != nil {
 		unauthorized(c)
 		return
 	}
@@ -57,7 +57,7 @@ func Login(c *gin.Context) {
 		unauthorized(c)
 		return
 	}
-	token, err := server.GenerateToken(user.ID)
+	token, err := GenerateToken(user.ID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "internal server error"})
 		return
@@ -95,7 +95,7 @@ func UpdateUserInfo(c *gin.Context) {
 		return
 	}
 	var user models.User
-	if err := server.DB().Where("id = ?", uid).First(&user).Error; err != nil {
+	if err := storage.DB().Where("id = ?", uid).First(&user).Error; err != nil {
 		badRequest(c, "user not found")
 		return
 	}
@@ -124,7 +124,7 @@ func UpdateUserInfo(c *gin.Context) {
 		default:
 			badRequest(c, "invalid image format")
 		}
-		avatarPath := server.DataDir() + "/avatars/" + user.Username + ext
+		avatarPath := storage.DataDir() + "/avatars/" + user.Username + ext
 		file, err := os.Create(avatarPath)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "internal server error"})
@@ -144,7 +144,7 @@ func UpdateUserInfo(c *gin.Context) {
 		user.Bio = json.Bio
 	}
 
-	if err := server.DB().Save(&user).Error; err != nil {
+	if err := storage.DB().Save(&user).Error; err != nil {
 		c.JSON(500, gin.H{"error": "internal server error"})
 		return
 	}

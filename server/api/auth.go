@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"github.com/gin-gonic/gin"
@@ -15,8 +15,8 @@ const (
 	maxTokenAge = 60 * 60 * 24 * 7 // 1 week
 )
 
-// / authMiddleware is a middleware that checks for a valid JWT token in the Authorization header
-func authMiddleware() gin.HandlerFunc {
+// AuthMiddleware is a middleware that checks for a valid JWT token in the Authorization header
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token != "" {

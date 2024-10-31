@@ -2,13 +2,14 @@ package server
 
 import (
 	"github.com/AniComix/server/api"
+	"github.com/AniComix/server/storage"
 	"github.com/gin-gonic/gin"
 )
 
 func Run() {
-	initStorage()
+	storage.InitStorage()
 	r := gin.Default()
-	apiGroup := r.Group("/apiGroup", authMiddleware())
+	apiGroup := r.Group("/apiGroup", api.AuthMiddleware())
 	{
 		apiGroup.GET("/", func(c *gin.Context) {
 			c.JSON(200, gin.H{
@@ -17,5 +18,6 @@ func Run() {
 		})
 		apiGroup.POST("/register", api.Register)
 		apiGroup.POST("/login", api.Login)
+		apiGroup.POST("/user/update", api.UpdateUserInfo)
 	}
 }
