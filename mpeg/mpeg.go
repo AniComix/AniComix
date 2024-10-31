@@ -1,9 +1,9 @@
 package mpeg
 
 /*
+#cgo CFLAGS: -I /opt/homebrew/Cellar/ffmpeg/7.1_2/include
+#cgo LDFLAGS: -L /opt/homebrew/Cellar/ffmpeg/7.1_2/lib -lavcodec -lavformat -lavutil
 #include "mpeg.h"
-#cgo CFLAGS: -I ./ffmpeg/include
-#cgo LDFLAGS: -L ./ffmpeg/lib -lavcodec -lavformat -lavutil
 */
 import "C"
 

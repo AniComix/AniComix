@@ -108,5 +108,5 @@ int transform_MP4_to_DASH(const char *input_path) {
 }
 
 void hello(){
-  printf("hello from c\n");
+  printf("hello from C!\n");
 }
