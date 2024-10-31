@@ -2,9 +2,14 @@ package api
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"github.com/AniComix/server"
 	"github.com/AniComix/server/models"
 	"github.com/gin-gonic/gin"
+	"io"
+	"net/http"
+	"os"
+	"strings"
 )
 
 const (
@@ -69,4 +74,79 @@ func hashPassword(password string) []byte {
 
 func checkPassword(password string, hash []byte) bool {
 	return string(hash) == string(hashPassword(password))
+}
+
+type updateUserInfoJson struct {
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+	Bio      string `json:"bio"`
+}
+
+func UpdateUserInfo(c *gin.Context) {
+	var json updateUserInfoJson
+	if err := c.BindJSON(&json); err != nil {
+		badRequest(c, "invalid json")
+		return
+	}
+
+	uid, exists := c.Get("uid")
+	if !exists {
+		unauthorized(c)
+		return
+	}
+	var user models.User
+	if err := server.DB().Where("id = ?", uid).First(&user).Error; err != nil {
+		badRequest(c, "user not found")
+		return
+	}
+
+	if json.Nickname != "" {
+		user.Nickname = json.Nickname
+	}
+	if json.Avatar != "" {
+		reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(json.Avatar))
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			badRequest(c, "invalid base64")
+			return
+		}
+		contentType := http.DetectContentType(bytes)
+		var ext string
+		switch contentType {
+		case "image/jpeg":
+			ext = ".jpg"
+		case "image/png":
+			ext = ".png"
+		case "image/gif":
+			ext = ".gif"
+		case "image/webp":
+			ext = ".webp"
+		default:
+			badRequest(c, "invalid image format")
+		}
+		avatarPath := server.DataDir() + "/avatars/" + user.Username + ext
+		file, err := os.Create(avatarPath)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "internal server error"})
+			return
+		}
+		if _, err := file.Write(bytes); err != nil {
+			c.JSON(500, gin.H{"error": "internal server error"})
+			return
+		}
+		if err := file.Close(); err != nil {
+			c.JSON(500, gin.H{"error": "internal server error"})
+			return
+		}
+		user.AvatarPath = avatarPath
+	}
+	if json.Bio != "" {
+		user.Bio = json.Bio
+	}
+
+	if err := server.DB().Save(&user).Error; err != nil {
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
 }

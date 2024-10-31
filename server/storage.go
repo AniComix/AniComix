@@ -34,3 +34,7 @@ func initDb() {
 func DB() *gorm.DB {
 	return db
 }
+
+func DataDir() string {
+	return dataDir
+}

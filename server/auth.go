@@ -32,7 +32,7 @@ func authMiddleware() gin.HandlerFunc {
 						c.Abort()
 						return
 					}
-					c.Set("id", int(claims["id"].(float64)))
+					c.Set("uid", int(claims["id"].(float64)))
 					c.Next()
 					return
 				}

@@ -11,5 +11,5 @@ type User struct {
 	PasswordHash []byte
 	AvatarPath   string // relative path to $dataDir/avatars
 	IsAdmin      bool
-	bio          string
+	Bio          string
 }
