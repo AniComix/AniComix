@@ -99,6 +99,7 @@ func (c *FFCommand) arg(args ...string) *FFCommand {
 
 func (c *FFCommand) run() (string, error) {
 	cmd := exec.Command(c.args[0], c.args[1:]...)
+	log.Printf("Running command: %s\n", cmd.String())
 	result, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("Could not run command: %s\n", cmd.String())
