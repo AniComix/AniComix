@@ -120,3 +120,57 @@ A valid `Authorization` header is required.
   "message": "success"
 }
 ```
+
+### Set admin
+
+POST /api/user/setAdmin
+
+#### Request
+
+```json
+{
+  "username": "username",
+  "is_admin": true
+}
+```
+
+A valid `Authorization` header is required.
+The user must be an admin.
+
+#### Response
+
+```json
+{
+  "message": "success"
+}
+```
+
+### Get user list
+
+GET /api/user/list
+
+#### Request
+
+Query parameters:
+- page: page number, default 1
+
+A valid `Authorization` header is required.
+The user must be an admin.
+
+#### Response
+
+```json
+{
+  "message": "success",
+  "users": [
+    {
+      "username": "username",
+      "nickname": "nickname",
+      "avatar": "avatar",
+      "bio": "bio",
+      "is_admin": false
+    }
+  ],
+  "max_page": 1
+}
+```

@@ -10,11 +10,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 const (
-	salt = "d`DWA*D7=875dD+D988~7"
+	salt     = "d`DWA*D7=875dD+D988~7"
+	pageSize = 20
 )
 
 type loginAndRegisterJson struct {
@@ -35,9 +37,18 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	var userCount int64
+	if err := storage.DB().Model(&models.User{}).Count(&userCount).Error; err != nil {
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+
 	user := models.User{
 		Username:     username,
 		PasswordHash: hashPassword(password),
+	}
+	if userCount == 0 {
+		user.IsAdmin = true
 	}
 	if err := storage.DB().Create(&user).Error; err == nil {
 		badRequest(c, "username already exists")
@@ -252,4 +263,84 @@ func GetAvatar(c *gin.Context) {
 		return
 	}
 	c.File(filepath.Join(storage.DataDir(), "avatars", user.AvatarPath))
+}
+
+type setIsAdminJson struct {
+	IsAdmin  bool   `json:"is_admin"`
+	Username string `json:"username"`
+}
+
+func SetIsAdmin(c *gin.Context) {
+	currentUser, err := getCurrentUser(c)
+	if err != nil || !currentUser.IsAdmin {
+		unauthorized(c)
+		return
+	}
+
+	var json setIsAdminJson
+	if err := c.BindJSON(&json); err != nil {
+		badRequest(c, "invalid json")
+		return
+	}
+	username := json.Username
+	isAdmin := json.IsAdmin
+	if username == "" {
+		badRequest(c, "username is required")
+		return
+	}
+	var user models.User
+	if err := storage.DB().Where("username = ?", username).First(&user).Error; err != nil {
+		badRequest(c, "user not found")
+		return
+	}
+	user.IsAdmin = isAdmin
+	if err := storage.DB().Save(&user).Error; err != nil {
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+func ListUsers(c *gin.Context) {
+	currentUser, err := getCurrentUser(c)
+	if err != nil || !currentUser.IsAdmin {
+		unauthorized(c)
+		return
+	}
+
+	var users []models.User
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		badRequest(c, "invalid page")
+		return
+	}
+	var count int64
+	if err := storage.DB().Model(&models.User{}).Count(&count).Error; err != nil {
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+	if err := storage.DB().Offset((page - 1) * pageSize).Limit(pageSize).Find(&users).Error; err != nil {
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+	result := make([]gin.H, len(users))
+	for i, user := range users {
+		var avatar string
+		if user.AvatarPath != "" {
+			avatar = "/api/avatar/" + user.Username
+		}
+		result[i] = gin.H{
+			"username": user.Username,
+			"nickname": user.Nickname,
+			"bio":      user.Bio,
+			"is_admin": user.IsAdmin,
+			"avatar":   avatar,
+		}
+	}
+	c.JSON(200, gin.H{
+		"message":  "success",
+		"users":    result,
+		"max_page": (count + pageSize - 1) / pageSize,
+	})
 }

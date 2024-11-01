@@ -11,11 +11,6 @@ func Run() {
 	r := gin.Default()
 	apiGroup := r.Group("/apiGroup", api.AuthMiddleware())
 	{
-		apiGroup.GET("/", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "hello world",
-			})
-		})
 		user := apiGroup.Group("/user")
 		{
 			user.POST("/register", api.Register)
@@ -24,6 +19,13 @@ func Run() {
 			user.POST("/changePassword", api.ChangePassword)
 			user.GET("/:username", api.GetUserInfo)
 			user.GET("/avatar/:username", api.GetAvatar)
+			user.POST("/setAdmin", api.SetIsAdmin)
+			user.GET("/list", api.ListUsers)
 		}
+	}
+
+	err := r.Run(":4320")
+	if err != nil {
+		panic(err)
 	}
 }
