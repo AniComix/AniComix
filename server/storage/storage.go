@@ -24,6 +24,7 @@ func InitStorage() {
 }
 
 func initDb() {
+	os.Mkdir(dataDir, os.ModePerm)
 	db, err := gorm.Open(sqlite.Open(filepath.Join(dataDir, "main.db")), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
