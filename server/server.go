@@ -28,6 +28,7 @@ func Run() {
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 	r.StaticFS("/data", http.Dir("data"))
+	api.StartUploadTaskCleaner()
 
 	apiGroup := r.Group("/apiGroup", api.AuthMiddleware())
 	{
@@ -41,6 +42,14 @@ func Run() {
 			user.GET("/avatar/:username", api.GetAvatar)
 			user.POST("/setAdmin", api.SetIsAdmin)
 			user.GET("/list", api.ListUsers)
+		}
+		upload := apiGroup.Group("/upload")
+		{
+			upload.POST("/create", api.UploadFile)
+			upload.PUT("/block", api.UploadBlock)
+			upload.POST("/finish", api.FinishUpload)
+			upload.GET("/status", api.GetUploadingStatus)
+			upload.POST("/cancel", api.CancelUploadTask)
 		}
 	}
 

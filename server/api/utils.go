@@ -22,3 +22,7 @@ func getCurrentUser(c *gin.Context) (models.User, error) {
 	}
 	return user, nil
 }
+
+func internalServerError(c *gin.Context) {
+	c.JSON(500, gin.H{"error": "internal server error"})
+}
