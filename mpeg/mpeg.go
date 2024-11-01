@@ -7,15 +7,6 @@ import (
 	"os/exec"
 )
 
-func Version() (string, error) {
-	cmd := exec.Command("ffmpeg", optVersion)
-	version, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-	return string(version), nil
-}
-
 // ffprobeShowStreamEntriesResult represents the overall structure of the JSON output
 type ffprobeShowStreamEntriesResult struct {
 	Streams []AVStreamInfo `json:"streams"`
