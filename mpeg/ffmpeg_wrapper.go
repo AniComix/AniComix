@@ -17,6 +17,7 @@ const (
 	optMap                  = "-map"
 	optInput                = "-i"
 	optVersion              = "-version"
+	optBenchmark            = "-benchmark"
 
 	optSetLogLevel              = "-v"
 	optOverwriteOutputFile      = "-y"
@@ -95,6 +96,10 @@ func (c *FFCommand) setMap(args ...string) *FFCommand {
 }
 func (c *FFCommand) arg(args ...string) *FFCommand {
 	c.args = append(c.args, args...)
+	return c
+}
+func (c *FFCommand) setBenchmark() *FFCommand {
+	c.args = append(c.args, optBenchmark)
 	return c
 }
 

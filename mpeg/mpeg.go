@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 )
 
 // ffprobeShowStreamEntriesResult represents the overall structure of the JSON output
@@ -12,7 +14,6 @@ type ffprobeShowStreamEntriesResult struct {
 }
 
 func GetFullMediaStreamInfo(path string) []AVStreamInfo {
-
 	info, err := ffprobe().
 		setLogLevel("error").
 		setInput(path).
@@ -67,17 +68,51 @@ func TransformVideoResolution144p(inputPath, outputPath string) {
 	transformVideoResolutionGeneric(inputPath, outputPath, 144)
 }
 
-func TransformVideoToDASHMultipleResolution(inputPath, mpdPath string) {
-	err := ffmpeg().
+func adjustBitrate(source, target string) string {
+	targetRate, err := strconv.ParseInt(strings.TrimRight(target, "k"), 10, 32)
+	if err != nil {
+		log.Printf("Error parsing bitrate: %v", err)
+		return source
+	}
+	targetRate *= 1000
+	sourceRate, _ := strconv.ParseInt(source, 10, 32)
+	log.Printf("source: %d, target: %d", sourceRate, targetRate)
+	if sourceRate >= targetRate {
+		return target
+	}
+	return source
+}
+
+func TransformVideoToDASHMultipleResolution(inputPath, mpdPath string) bool {
+	streams := GetFullMediaStreamInfo(inputPath)
+	if len(streams) == 0 {
+		log.Printf("Could not find a video stream")
+		return false
+	}
+	height := streams[0].Height
+	log.Println(streams[0])
+	cmd := ffmpeg().
 		useHardwareAcceleration("cuda").
-		setInput(inputPath).
-		setMap("0:v", "-s:v:0", "1920x1080", "-b:v:0", "3000k", "-c:v:0", LibX264).
-		setMap("0:v", "-s:v:1", "1280x720", "-b:v:1", "1500k", "-c:v:1", LibX264).
-		setMap("0:v", "-s:v:2", "854x480", "-b:v:2", "800k", "-c:v:2", LibX264).
-		setMap("0:a").setAudioCodec(AAC).setAudioBitrate("128k").
-		arg("-f", "dash", mpdPath).run()
+		setBenchmark().
+		setInput(inputPath)
+	source := streams[0].Bitrate
+	if height >= 360 {
+		cmd.setMap("0:v", "-vf", "scale=-2:360", "-b:v:0", adjustBitrate(source, "800k"), "-c:v:0", LibX264)
+	}
+	if height >= 720 {
+		cmd.setMap("0:v", "-vf", "scale=-2:720", "-b:v:1", adjustBitrate(source, "1500k"), "-c:v:1", LibX264)
+	}
+	if height >= 1080 {
+		cmd.setMap("0:v", "-vf", "scale=-2:1080", "-b:v:2", adjustBitrate(source, "3000k"), "-c:v:2", LibX264)
+	}
+	if height >= 1440 {
+		cmd.setMap("0:v", "-vf", "scale=-2:1440", "-b:v:3", adjustBitrate(source, "4000k"), "-c:v:3", LibX264)
+	}
+	cmd.setMap("0:a").setAudioCodec(AAC).setAudioBitrate("128k")
+	err := cmd.arg("-f", "dash", mpdPath).run()
 	if err != nil {
 		log.Printf("Could not transform video: %v", err)
-		return
+		return false
 	}
+	return true
 }
