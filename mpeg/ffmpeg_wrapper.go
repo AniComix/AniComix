@@ -2,6 +2,7 @@ package mpeg
 
 import (
 	"log"
+	"os"
 	"os/exec"
 )
 
@@ -97,12 +98,23 @@ func (c *FFCommand) arg(args ...string) *FFCommand {
 	return c
 }
 
-func (c *FFCommand) run() (string, error) {
+func (c *FFCommand) run() error {
 	cmd := exec.Command(c.args[0], c.args[1:]...)
-	log.Printf("Running command: %s\n", cmd.String())
+	log.Printf("Running command(stdout): %s\n", cmd.String())
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Could not run command: %s\n", cmd.String())
+	}
+	return err
+}
+func (c *FFCommand) combinedOutput() ([]byte, error) {
+	cmd := exec.Command(c.args[0], c.args[1:]...)
+	log.Printf("Running command(memory): %s\n", cmd.String())
 	result, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("Could not run command: %s\n", cmd.String())
 	}
-	return string(result), err
+	return result, err
 }

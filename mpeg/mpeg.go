@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os/exec"
 )
 
 // ffprobeShowStreamEntriesResult represents the overall structure of the JSON output
@@ -14,12 +13,11 @@ type ffprobeShowStreamEntriesResult struct {
 
 func GetFullMediaStreamInfo(path string) []AVStreamInfo {
 
-	cmd := ffprobe().
+	info, err := ffprobe().
 		setLogLevel("error").
 		setInput(path).
 		setShowEntry("stream").
-		setOf("json")
-	info, err := exec.Command(cmd.args[0], cmd.args[1:]...).CombinedOutput()
+		setOf("json").combinedOutput()
 	if err != nil {
 		log.Printf("Could not get media info: %s,%v", string(info), err)
 		return nil
@@ -35,7 +33,7 @@ func GetFullMediaStreamInfo(path string) []AVStreamInfo {
 
 // width of the output video is calculated automatically
 func transformVideoResolutionGeneric(inputPath, outputPath string, height int32) bool {
-	result, err := ffmpeg().
+	err := ffmpeg().
 		useHardwareAcceleration("cuda").
 		setInput(inputPath).
 		setLogLevel("error").
@@ -44,7 +42,7 @@ func transformVideoResolutionGeneric(inputPath, outputPath string, height int32)
 		setOutput(outputPath).
 		run()
 	if err != nil {
-		log.Printf("Could not transform video: %s,%v", result, err)
+		log.Printf("Could not transform video: %v", err)
 		return false
 	}
 	return true
@@ -70,7 +68,7 @@ func TransformVideoResolution144p(inputPath, outputPath string) {
 }
 
 func TransformVideoToDASHMultipleResolution(inputPath, mpdPath string) {
-	info, err := ffmpeg().
+	err := ffmpeg().
 		useHardwareAcceleration("cuda").
 		setInput(inputPath).
 		setMap("0:v", "-s:v:0", "1920x1080", "-b:v:0", "3000k", "-c:v:0", LibX264).
@@ -79,8 +77,7 @@ func TransformVideoToDASHMultipleResolution(inputPath, mpdPath string) {
 		setMap("0:a").setAudioCodec(AAC).setAudioBitrate("128k").
 		arg("-f", "dash", mpdPath).run()
 	if err != nil {
-		log.Printf("Could not transform video: %s,%v", info, err)
+		log.Printf("Could not transform video: %v", err)
 		return
 	}
-	log.Printf("Transformed video to: %s", info)
 }
