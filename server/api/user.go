@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -16,9 +17,19 @@ const (
 	salt = "d`DWA*D7=875dD+D988~7"
 )
 
+type loginAndRegisterJson struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func Register(c *gin.Context) {
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+	json := loginAndRegisterJson{}
+	if err := c.BindJSON(&json); err != nil {
+		badRequest(c, "invalid json")
+		return
+	}
+	username := json.Username
+	password := json.Password
 	if username == "" || password == "" {
 		badRequest(c, "username and password are required")
 		return
@@ -41,8 +52,13 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+	json := loginAndRegisterJson{}
+	if err := c.BindJSON(&json); err != nil {
+		badRequest(c, "invalid json")
+		return
+	}
+	username := json.Username
+	password := json.Password
 	if username == "" || password == "" {
 		badRequest(c, "username and password are required")
 		return
@@ -160,9 +176,19 @@ func UpdateUserInfo(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "success"})
 }
 
+type changePasswordJson struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 func ChangePassword(c *gin.Context) {
-	oldPassword := c.PostForm("old_password")
-	newPassword := c.PostForm("new_password")
+	var json changePasswordJson
+	if err := c.BindJSON(&json); err != nil {
+		badRequest(c, "invalid json")
+		return
+	}
+	oldPassword := json.OldPassword
+	newPassword := json.NewPassword
 	if oldPassword == "" || newPassword == "" {
 		badRequest(c, "old_password and new_password are required")
 		return
@@ -188,4 +214,42 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"message": "success"})
+}
+
+func GetUserInfo(c *gin.Context) {
+	username := c.Param("username")
+	if username == "" {
+		badRequest(c, "user not found")
+		return
+	}
+	var user models.User
+	if err := storage.DB().Where("username = ?", username).First(&user).Error; err != nil {
+		badRequest(c, "user not found")
+		return
+	}
+	var avatar string
+	if user.AvatarPath != "" {
+		avatar = "/api/avatar/" + user.Username
+	}
+	c.JSON(200, gin.H{
+		"username": user.Username,
+		"nickname": user.Nickname,
+		"avatar":   avatar,
+		"bio":      user.Bio,
+		"is_admin": user.IsAdmin,
+	})
+}
+
+func GetAvatar(c *gin.Context) {
+	username := c.Param("username")
+	var user models.User
+	if err := storage.DB().Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(404, gin.H{"error": "user not found"})
+		return
+	}
+	if user.AvatarPath == "" {
+		c.JSON(404, gin.H{"error": "avatar not found"})
+		return
+	}
+	c.File(filepath.Join(storage.DataDir(), "avatars", user.AvatarPath))
 }

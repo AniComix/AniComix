@@ -22,6 +22,8 @@ func Run() {
 			user.POST("/login", api.Login)
 			user.POST("/update", api.UpdateUserInfo)
 			user.POST("/changePassword", api.ChangePassword)
+			user.GET("/:username", api.GetUserInfo)
+			user.GET("/avatar/:username", api.GetAvatar)
 		}
 	}
 }
