@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/AniComix/mpeg"
 	"github.com/AniComix/server/storage"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -172,6 +173,9 @@ func FinishUpload(c *gin.Context) {
 		return
 	}
 	defer func(file *os.File) {
+		if file == nil {
+			return
+		}
 		err := file.Close()
 		if err != nil {
 			log.Print(err)
@@ -206,6 +210,20 @@ func FinishUpload(c *gin.Context) {
 		FileName: task.FileName,
 		Time:     time.Now().Unix(),
 	}
+	err = file.Close()
+	if err != nil {
+		internalServerError(c)
+		return
+	}
+	filename := file.Name()
+	ok := mpeg.CheckVideoFileIntegrity(filename)
+	file = nil
+	if !ok {
+		c.JSON(404, "invalid uploaded file")
+		return
+	}
+	// TODO: Transform uploaded video into DASH format, then update series/episode table
+	//go mpeg.TransformVideoToDASHMultipleResolution(filename,"some/output/path")
 	c.JSON(200, gin.H{
 		"message": "ok",
 	})

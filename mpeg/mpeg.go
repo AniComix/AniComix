@@ -116,3 +116,8 @@ func TransformVideoToDASHMultipleResolution(inputPath, mpdPath string) bool {
 	}
 	return true
 }
+
+func CheckVideoFileIntegrity(path string) bool {
+	streams := GetFullMediaStreamInfo(path)
+	return len(streams) > 0 && streams[0].CodecType == "video"
+}
