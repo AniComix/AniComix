@@ -29,7 +29,6 @@ func Run() {
 	r.Use(CORSMiddleware())
 	r.StaticFS("/data", http.Dir("data"))
 	api.StartUploadTaskCleaner()
-
 	apiGroup := r.Group("/apiGroup", api.AuthMiddleware())
 	{
 		user := apiGroup.Group("/user")
