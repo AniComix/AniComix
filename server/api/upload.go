@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/AniComix/mpeg"
+	"github.com/AniComix/query"
 	"github.com/AniComix/server/storage"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -241,8 +242,12 @@ func FinishUpload(c *gin.Context) {
 		c.JSON(404, "invalid uploaded file")
 		return
 	}
-
-	outputPath := fmt.Sprintf("./data/%s/Season%d/%s.mpd", task.SeriesID, task.Season, task.Title)
+	series, err := query.Series.Where(query.Series.ID.Eq(uint(task.SeriesID))).First()
+	if err != nil {
+		internalServerError(c)
+		return
+	}
+	outputPath := fmt.Sprintf("./data/%s/Season%d/%s.mpd", series.Title, task.Season, task.Title)
 	go func(inputPath, outputPath string) {
 		ok := mpeg.TransformVideoToDASHMultipleResolution(inputPath, outputPath)
 		if ok {

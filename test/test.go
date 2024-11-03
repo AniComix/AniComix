@@ -6,10 +6,6 @@ import (
 	"gorm.io/gen"
 )
 
-type Querier interface {
-	FilterWithNameAndRole(name string) ([]gen.T, error)
-}
-
 func main() {
 	g := gen.NewGenerator(gen.Config{
 		OutPath: "./query",
