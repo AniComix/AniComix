@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"github.com/AniComix/mpeg"
 	"github.com/AniComix/server/storage"
 	"github.com/gin-gonic/gin"
@@ -41,14 +42,18 @@ type uploadFileRequest struct {
 }
 
 type Uploading struct {
-	ID         string
-	Username   string
-	FileName   string
-	BlockCount int
-	TotalSize  int
-	Md5        string
-	BlockState []bool
-	CreateAt   int64
+	ID          string
+	Username    string
+	FileName    string
+	BlockCount  int
+	TotalSize   int
+	Md5         string
+	BlockState  []bool
+	CreateAt    int64
+	SeriesID    int32
+	Season      int32
+	Title       string
+	Description string
 }
 
 func UploadFile(c *gin.Context) {
@@ -74,15 +79,29 @@ func UploadFile(c *gin.Context) {
 	t := time.Now().Unix()
 	hash := md5.Sum([]byte(user.Username + req.FileName + strconv.FormatInt(t, 10)))
 	id = hex.EncodeToString(hash[:])
+	seriesID, err := strconv.ParseInt(c.PostForm("series_id"), 10, 32)
+	if err != nil {
+		badRequest(c, "invalid series id")
+		return
+	}
+	season, err := strconv.ParseInt(c.PostForm("season"), 10, 32)
+	if err != nil {
+		badRequest(c, "invalid season")
+		return
+	}
 	uploading[id] = &Uploading{
-		ID:         id,
-		Username:   user.Username,
-		FileName:   req.FileName,
-		BlockCount: req.BlockCount,
-		TotalSize:  req.TotalSize,
-		Md5:        req.Md5,
-		BlockState: make([]bool, req.BlockCount),
-		CreateAt:   t,
+		ID:          id,
+		Username:    user.Username,
+		FileName:    req.FileName,
+		BlockCount:  req.BlockCount,
+		TotalSize:   req.TotalSize,
+		Md5:         req.Md5,
+		BlockState:  make([]bool, req.BlockCount),
+		CreateAt:    t,
+		Title:       c.PostForm("title"),
+		Description: c.PostForm("description"),
+		SeriesID:    int32(seriesID),
+		Season:      int32(season),
 	}
 	err = os.MkdirAll(filepath.Join(storage.CacheDir(), "upload", id+"uploading"), 0755)
 	if err != nil {
@@ -222,8 +241,17 @@ func FinishUpload(c *gin.Context) {
 		c.JSON(404, "invalid uploaded file")
 		return
 	}
-	// TODO: Transform uploaded video into DASH format, then update series/episode table
-	//go mpeg.TransformVideoToDASHMultipleResolution(filename,"some/output/path")
+
+	outputPath := fmt.Sprintf("./data/%s/Season%d/%s.mpd", task.SeriesID, task.Season, task.Title)
+	go func(inputPath, outputPath string) {
+		ok := mpeg.TransformVideoToDASHMultipleResolution(inputPath, outputPath)
+		if ok {
+			err := os.Remove(filename)
+			if err != nil {
+				log.Print(err)
+			}
+		}
+	}(filename, outputPath)
 	c.JSON(200, gin.H{
 		"message": "ok",
 	})
